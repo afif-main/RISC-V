@@ -1,0 +1,60 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity cpu is
+    port (
+        clk : in std_logic;
+        rst : in std_logic
+    );
+end entity cpu;
+
+architecture rtl of cpu is
+
+    signal instr    : std_logic_vector(31 downto 0);
+    signal we       : std_logic;
+    signal alu_op   : std_logic_vector(3 downto 0);
+    signal alu_src  : std_logic;
+    signal mem_write   : std_logic; -- Écriture dans RAM (Store)
+    signal mem_to_reg  : std_logic; -- Choisir RAM -> RegFile (Load)
+    signal branch     : std_logic;   -- BEQ/BNE
+    signal branch_ne  : std_logic;   -- BNE spécifique
+
+begin
+
+    ------------------------------------------------
+    -- Control Unit
+    ------------------------------------------------
+    ctrl_inst : entity work.ctrl_unit
+        port map (
+            instr   => instr,
+            we      => we,
+            alu_op  => alu_op,
+            alu_src => alu_src,
+            mem_write => mem_write,
+            mem_to_reg => mem_to_reg,
+            -- branch and branch_ne are also connected inside ctrl_unit
+            branch => branch,
+            branch_ne => branch_ne
+        );
+
+    ------------------------------------------------
+    -- Datapath
+    ------------------------------------------------
+    datapath_inst : entity work.datapath
+        port map (
+            clk      => clk,
+            rst      => rst,
+            we       => we,
+            alu_op   => alu_op,
+            alu_src  => alu_src,
+            instr    => instr,
+            -- mem_write and mem_to_reg are also connected inside datapath
+            mem_write => mem_write,
+            mem_to_reg => mem_to_reg,
+            -- branch and branch_ne are also connected inside datapath
+            branch => branch,
+            branch_ne => branch_ne   
+        );
+
+end architecture rtl;
