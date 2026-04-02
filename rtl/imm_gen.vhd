@@ -42,6 +42,10 @@ begin
                                    32
                                )
                            );
+            
+            -- Type-U (LUI, AUIPC)
+            when "0110111" | "0010111" =>
+                imm_out <= instr(31 downto 12) & x"000";
 
             -- Par défaut
             when others =>

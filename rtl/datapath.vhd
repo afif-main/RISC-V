@@ -15,9 +15,11 @@ entity datapath is
         mem_write  : in  std_logic;
         branch     : in  std_logic;
         branch_ne  : in  std_logic;
-        jump       : in  std_logic; -- NOUVEAU
-        jalr       : in  std_logic; -- NOUVEAU
-        pc_to_reg  : in  std_logic; -- NOUVEAU
+        jump       : in  std_logic; 
+        jalr       : in  std_logic; 
+        pc_to_reg  : in  std_logic; 
+        lui_to_reg  : in  std_logic;
+        auipc_to_reg: in  std_logic;
 
         -- instruction to control unit
         instr      : out std_logic_vector(31 downto 0)
@@ -73,12 +75,12 @@ begin
     take_branch <= (branch and not branch_ne and zero) or 
                    (branch and branch_ne and not zero);
 
-    -- Multiplexeur de l'adresse suivante (Gère +4, Branches, JAL, JALR)
+ 
+    -- Multiplexeur de l'adresse suivante
     pc_next <= (alu_res(31 downto 1) & '0') when (jump = '1' and jalr = '1') else
                pc_branch                    when (jump = '1' and jalr = '0') else
                pc_branch                    when take_branch = '1' else
                pc_plus_4;
-
     ------------------------------------------------
     -- INSTRUCTION MEMORY
     ------------------------------------------------
@@ -93,9 +95,11 @@ begin
     ------------------------------------------------
     -- REGISTER FILE & WRITE BACK LOGIC
     ------------------------------------------------
-    -- NOUVEAU : Multiplexeur à 3 entrées pour l'écriture dans le registre
+       -- Multiplexeur de l'adresse suivante (Gère +4, Branches, JAL, JALR,lui, auipc)
     wb_data <= pc_plus_4    when pc_to_reg = '1' else
                mem_data_out when mem_to_reg = '1' else 
+               pc_branch    when auipc_to_reg = '1' else -- AUIPC (PC + imm)
+               imm          when lui_to_reg = '1' else   -- LUI (imm 32 bits)
                alu_res;
 
     regfile_inst : entity work.reg_file

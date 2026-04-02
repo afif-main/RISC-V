@@ -24,6 +24,8 @@ architecture rtl of cpu is
     signal jump       : std_logic;
     signal jalr       : std_logic;
     signal pc_to_reg  : std_logic;
+    signal lui_to_reg   : std_logic;
+    signal auipc_to_reg : std_logic;
 
 begin
 
@@ -42,7 +44,9 @@ begin
             branch_ne  => branch_ne,
             jump       => jump,
             jalr       => jalr,
-            pc_to_reg  => pc_to_reg
+            pc_to_reg  => pc_to_reg,
+            lui_to_reg   => lui_to_reg,
+            auipc_to_reg => auipc_to_reg
         );
 
     ------------------------------------------------
@@ -62,7 +66,9 @@ begin
             branch_ne  => branch_ne,
             jump       => jump,
             jalr       => jalr,
-            pc_to_reg  => pc_to_reg
+            pc_to_reg  => pc_to_reg,
+            lui_to_reg   => lui_to_reg,
+            auipc_to_reg => auipc_to_reg
         );
 
 end architecture rtl;

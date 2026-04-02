@@ -12,9 +12,11 @@ entity ctrl_unit is
         mem_to_reg  : out std_logic;
         branch      : out std_logic;
         branch_ne   : out std_logic;
-        jump        : out std_logic; -- NOUVEAU : Saut inconditionnel
-        jalr        : out std_logic; -- NOUVEAU : Différencie JAL et JALR
-        pc_to_reg   : out std_logic  -- NOUVEAU : Sauvegarde PC+4
+        jump        : out std_logic; --  Saut inconditionnel
+        jalr        : out std_logic; --  Différencie JAL et JALR
+        pc_to_reg   : out std_logic; --  Sauvegarde PC+4
+        lui_to_reg  : out std_logic; --  Pour LUI
+        auipc_to_reg: out std_logic  -- Pour AUIPC
     );
 end entity ctrl_unit;
 
@@ -41,6 +43,8 @@ begin
         jump       <= '0';
         jalr       <= '0';
         pc_to_reg  <= '0';
+        lui_to_reg   <= '0';
+        auipc_to_reg <= '0';
 
         case opcode is
 
@@ -129,9 +133,25 @@ begin
             jalr       <= '1';   -- Spécifie que l'adresse vient de l'ALU
             pc_to_reg  <= '1';   -- On écrit PC+4 au lieu du résultat ALU
 
+
+        -- LUI (Load Upper Immediate) - Type U - Opcode 0110111
+      
+        when "0110111" =>
+            we         <= '1';
+            lui_to_reg <= '1';   -- On écrit l'immédiat directement
+
+        
+        -- AUIPC (Add Upper Immediate to PC) - Type U - Opcode 0010111
+        
+        when "0010111" =>
+            we           <= '1';
+            auipc_to_reg <= '1'; -- On écrit (PC + immédiat)
+
         when others =>
             null;
 
         end case;
+
+        
     end process;
 end architecture rtl;
