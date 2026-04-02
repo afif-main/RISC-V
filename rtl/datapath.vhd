@@ -11,12 +11,13 @@ entity datapath is
         we         : in  std_logic;
         alu_op     : in  std_logic_vector(3 downto 0);
         alu_src    : in  std_logic;
-
-        mem_to_reg : in  std_logic;   -- choisir entre ALU ou RAM pour write-back
-        mem_write  : in  std_logic;   -- write enable pour la RAM
-
-        branch     : in  std_logic;   -- BEQ/BNE
-        branch_ne  : in  std_logic;   -- BNE spécifique
+        mem_to_reg : in  std_logic;
+        mem_write  : in  std_logic;
+        branch     : in  std_logic;
+        branch_ne  : in  std_logic;
+        jump       : in  std_logic; -- NOUVEAU
+        jalr       : in  std_logic; -- NOUVEAU
+        pc_to_reg  : in  std_logic; -- NOUVEAU
 
         -- instruction to control unit
         instr      : out std_logic_vector(31 downto 0)
@@ -26,19 +27,20 @@ end entity datapath;
 architecture rtl of datapath is
 
     -- PC
-    signal pc       : std_logic_vector(31 downto 0);
-    signal pc_next  : std_logic_vector(31 downto 0);
+    signal pc         : std_logic_vector(31 downto 0);
+    signal pc_next    : std_logic_vector(31 downto 0);
+    signal pc_plus_4  : std_logic_vector(31 downto 0); -- NOUVEAU
 
     -- Instruction
-    signal instr_i  : std_logic_vector(31 downto 0);
+    signal instr_i    : std_logic_vector(31 downto 0);
 
     -- Register file
-    signal rs1_data : std_logic_vector(31 downto 0);
-    signal rs2_data : std_logic_vector(31 downto 0);
+    signal rs1_data   : std_logic_vector(31 downto 0);
+    signal rs2_data   : std_logic_vector(31 downto 0);
 
     -- ALU
-    signal alu_b    : std_logic_vector(31 downto 0);
-    signal alu_res  : std_logic_vector(31 downto 0);
+    signal alu_b      : std_logic_vector(31 downto 0);
+    signal alu_res    : std_logic_vector(31 downto 0);
 
     -- Memory
     signal mem_data_out : std_logic_vector(31 downto 0);
@@ -49,13 +51,13 @@ architecture rtl of datapath is
 
     -- Branch signals
     signal zero        : std_logic;
-    signal take_branch : std_logic; -- signal pour décider de prendre ou non le branchement
+    signal take_branch : std_logic;
     signal pc_branch   : std_logic_vector(31 downto 0);
 
 begin
 
     ------------------------------------------------
-    -- PC REGISTER
+    -- PC REGISTER & PC NEXT LOGIC
     ------------------------------------------------
     pc_inst : entity work.pc
         port map (
@@ -65,9 +67,17 @@ begin
             pc_out => pc
         );
 
-    -- PC next : MUX avec branchement
-    pc_next <= pc_branch when take_branch = '1'
-               else std_logic_vector(unsigned(pc) + 4);
+    pc_plus_4 <= std_logic_vector(unsigned(pc) + 4);
+
+    -- Décision de branchement (BEQ/BNE)
+    take_branch <= (branch and not branch_ne and zero) or 
+                   (branch and branch_ne and not zero);
+
+    -- Multiplexeur de l'adresse suivante (Gère +4, Branches, JAL, JALR)
+    pc_next <= (alu_res(31 downto 1) & '0') when (jump = '1' and jalr = '1') else
+               pc_branch                    when (jump = '1' and jalr = '0') else
+               pc_branch                    when take_branch = '1' else
+               pc_plus_4;
 
     ------------------------------------------------
     -- INSTRUCTION MEMORY
@@ -78,12 +88,15 @@ begin
             data_out => instr_i
         );
 
-    instr <= instr_i;  -- sortie vers Control Unit
+    instr <= instr_i;
 
     ------------------------------------------------
-    -- REGISTER FILE
+    -- REGISTER FILE & WRITE BACK LOGIC
     ------------------------------------------------
-    wb_data <= mem_data_out when mem_to_reg = '1' else alu_res;
+    -- NOUVEAU : Multiplexeur à 3 entrées pour l'écriture dans le registre
+    wb_data <= pc_plus_4    when pc_to_reg = '1' else
+               mem_data_out when mem_to_reg = '1' else 
+               alu_res;
 
     regfile_inst : entity work.reg_file
         port map (
@@ -98,23 +111,14 @@ begin
         );
 
     ------------------------------------------------
-    -- ALU MUX
+    -- ALU & IMMEDIATES
     ------------------------------------------------
     alu_b <= rs2_data when alu_src = '0' else imm;
-
-    -- Comparateur pour BEQ/BNE
+    
     zero <= '1' when rs1_data = rs2_data else '0';
-
-    -- Calcul adresse de branche
+    
     pc_branch <= std_logic_vector(unsigned(pc) + unsigned(imm));
 
-    -- Décision prise ou non de branch 
-    take_branch <= (branch and not branch_ne and zero) or  -- Cas BEQ : zero doit être 1
-               (branch and branch_ne and not zero);   -- Cas BNE : zero doit être 0
-
-    ------------------------------------------------
-    -- ALU
-    ------------------------------------------------
     alu_inst : entity work.alu
         port map (
             a      => rs1_data,
@@ -123,9 +127,6 @@ begin
             result => alu_res
         );
 
-    ------------------------------------------------
-    -- GENERATE IMMEDIATE
-    ------------------------------------------------
     imm_gen_inst : entity work.imm_gen
         port map (
             instr   => instr_i,

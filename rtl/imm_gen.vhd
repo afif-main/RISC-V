@@ -17,8 +17,8 @@ begin
         opcode := instr(6 downto 0);
         
         case opcode is
-            -- Type-I (ADDI, ANDI, LW, etc.)
-            when "0010011" | "0000011" =>
+            -- Type-I (ADDI, ANDI, LW, JALR)
+            when "0010011" | "0000011" | "1100111" =>
                 imm_out <= std_logic_vector(resize(signed(instr(31 downto 20)), 32));
 
             -- Type-S (SW)
@@ -30,6 +30,15 @@ begin
                 imm_out <= std_logic_vector(
                                resize(
                                    signed(instr(31) & instr(7) & instr(30 downto 25) & instr(11 downto 8) & '0'),
+                                   32
+                               )
+                           );
+            
+            -- Type-J (JAL)
+            when "1101111" =>
+                imm_out <= std_logic_vector(
+                               resize(
+                                   signed(instr(31) & instr(19 downto 12) & instr(20) & instr(30 downto 21) & '0'),
                                    32
                                )
                            );

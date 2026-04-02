@@ -1,0 +1,10 @@
+vcom -2008 rtl/pc.vhd
+vcom -2008 rtl/instr_mem.vhd
+vcom -2008 rtl/reg_file.vhd
+vcom -2008 rtl/alu.vhd
+vcom -2008 rtl/datamem.vhd
+vcom -2008 rtl/imm_gen.vhd
+vcom -2008 rtl/ctrl_unit.vhd
+vcom -2008 rtl/datapath.vhd
+vcom -2008 rtl/cpu.vhd
+vcom -2008 tb/tb_pc.vhd
