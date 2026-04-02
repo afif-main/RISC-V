@@ -20,6 +20,7 @@ The Control Unit and Datapath are capable of decoding and executing the followin
 | **I-Type** | `ADDI`, `ANDI`, `ORI`, `XORI`, `SLTI`, `SLLI`, `SRLI`, `SRAI`, `LW` (Load Word) |
 | **S-Type** | `SW` (Store Word) |
 | **B-Type** | `BEQ` (Branch if Equal), `BNE` (Branch if Not Equal) |
+| **J-Type & Jumps** | `JAL` (Jump and Link), `JALR` (Jump and Link Register) |
 
 ## 📁 Repository Structure
 
